@@ -29,12 +29,6 @@ type Command struct {
 	Flags flag.FlagSet
 }
 
-// Parse parses the provided command-line arguments using the command's flag
-// set.
-func (c *Command) Parse(args []string) error {
-	return c.Flags.Parse(args)
-}
-
 // Name is the command name. Command.Short is always expected to begin with
 // this name.
 func (c *Command) Name() string {
@@ -53,6 +47,21 @@ func (c *Command) Lookup(name string) (*Command, error) {
 		}
 	}
 	return nil, fmt.Errorf("invalid command: %q", name)
+}
+
+func (c *Command) Usage() {
+	c.Flags.Usage = func() {
+		c.usage(c.Flags.Output())
+	}
+	c.Flags.Usage()
+}
+
+func hasFlags(fs *flag.FlagSet) bool {
+	visited := false
+	fs.VisitAll(func(f *flag.Flag) {
+		visited = true
+	})
+	return visited
 }
 
 func (c *Command) usage(w io.Writer) {
@@ -76,19 +85,4 @@ func (c *Command) usage(w io.Writer) {
 	c.Flags.SetOutput(w)
 	c.Flags.PrintDefaults()
 	fmt.Fprintf(w, "\n\n")
-}
-
-func (c *Command) Usage() {
-	c.Flags.Usage = func() {
-		c.usage(c.Flags.Output())
-	}
-	c.Flags.Usage()
-}
-
-func hasFlags(fs *flag.FlagSet) bool {
-	visited := false
-	fs.VisitAll(func(f *flag.Flag) {
-		visited = true
-	})
-	return visited
 }
