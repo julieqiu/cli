@@ -20,7 +20,7 @@ type Command struct {
 	Long string
 
 	// Run executes the command.
-	Run func(ctx context.Context, args []string) error
+	Run func(ctx context.Context, cmd *Command, args []string) error
 
 	// Commands are the child commands.
 	Commands []*Command
@@ -56,7 +56,7 @@ func (c *Command) Usage() {
 	c.Flags.Usage()
 }
 
-func hasFlags(fs *flag.FlagSet) bool {
+func hasFlags(fs flag.FlagSet) bool {
 	visited := false
 	fs.VisitAll(func(f *flag.Flag) {
 		visited = true

@@ -1,9 +1,8 @@
-package cli_test
+package cli
 
 import (
 	"bytes"
 	"context"
-	"flag"
 	"fmt"
 	"testing"
 
@@ -20,13 +19,15 @@ func TestParseAndSetFlags(t *testing.T) {
 		Short:     "test is used for testing",
 		Long:      "This is the long documentation for command test.",
 		UsageLine: "foobar test [arguments]",
+		Run: func(ctx context.Context, cmd *Command, args []string) error {
+			return cmd.Flags.Parse(args)
+		},
 	}
-	cmd.Init()
 	cmd.Flags.StringVar(&strFlag, "name", "default", "name flag")
 	cmd.Flags.IntVar(&intFlag, "count", 0, "count flag")
 
 	args := []string{"-name=foo", "-count=5"}
-	if err := cmd.Parse(args); err != nil {
+	if err := cmd.Run(t.Context(), cmd, args); err != nil {
 		t.Fatalf("Parse() failed: %v", err)
 	}
 
@@ -77,13 +78,13 @@ func TestRun(t *testing.T) {
 	executed := false
 	cmd := &Command{
 		Short: "run runs the command",
-		Run: func(ctx context.Context) error {
+		Run: func(ctx context.Context, cmd *Command, args []string) error {
 			executed = true
 			return nil
 		},
 	}
 
-	if err := cmd.Run(t.Context()); err != nil {
+	if err := cmd.Run(t.Context(), cmd, nil); err != nil {
 		t.Fatal(err)
 	}
 	if !executed {
@@ -101,7 +102,7 @@ Usage:
 
 	for _, test := range []struct {
 		name  string
-		flags []func(fs *flag.FlagSet)
+		flags []func(c *Command)
 		want  string
 	}{
 		{
@@ -111,9 +112,9 @@ Usage:
 		},
 		{
 			name: "with string flag",
-			flags: []func(fs *flag.FlagSet){
-				func(fs *flag.FlagSet) {
-					fs.String("name", "default", "name flag")
+			flags: []func(c *Command){
+				func(c *Command) {
+					c.Flags.String("name", "default", "name flag")
 				},
 			},
 			want: fmt.Sprintf(`%sFlags:
@@ -130,9 +131,8 @@ Usage:
 				UsageLine: "test [flags]",
 				Long:      "Test prints test information.",
 			}
-			c.Init()
 			for _, fn := range test.flags {
-				fn(c.Flags)
+				fn(c)
 			}
 
 			var buf bytes.Buffer
