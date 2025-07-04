@@ -19,14 +19,28 @@ type Command struct {
 	// Long is the full description of the command.
 	Long string
 
-	// Run executes the command.
-	Run func(ctx context.Context, cmd *Command, args []string) error
+	// Action is the action to execute when the command is run.
+	Action func(ctx context.Context, cmd *Command) error
 
 	// Commands are the child commands.
 	Commands []*Command
 
 	// Flag is a set of flags specific to this command.
 	Flags flag.FlagSet
+}
+
+// Run parses the arguments and executes Command.Action.
+func (c *Command) Run(ctx context.Context, args []string) error {
+	if err := c.Flags.Parse(args); err != nil {
+		return err
+	}
+	c.Flags.Usage = func() {
+		c.usage(c.Flags.Output())
+	}
+	if c.Action != nil {
+		return c.Action(ctx, c)
+	}
+	return nil
 }
 
 // Name is the command name. Command.Short is always expected to begin with
@@ -47,13 +61,6 @@ func (c *Command) Lookup(name string) (*Command, error) {
 		}
 	}
 	return nil, fmt.Errorf("invalid command: %q", name)
-}
-
-func (c *Command) Usage() {
-	c.Flags.Usage = func() {
-		c.usage(c.Flags.Output())
-	}
-	c.Flags.Usage()
 }
 
 func hasFlags(fs flag.FlagSet) bool {

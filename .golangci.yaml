@@ -1,0 +1,20 @@
+# Defines the configuration version.
+# The only possible value is "2".
+version: "2"
+
+linters:
+  # See https://golangci-lint.run/usage/linters for details.
+  default: none
+  enable:
+    - containedctx
+    - contextcheck
+    - fatcontext
+    - godot
+    - govet
+    - ineffassign
+    - misspell
+    - staticcheck
+    - unparam
+    - unused
+    - usetesting
+
