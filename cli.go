@@ -40,7 +40,15 @@ func (c *Command) Run(ctx context.Context, args []string) error {
 	if c.Action != nil {
 		return c.Action(ctx, c)
 	}
-	return nil
+	if len(args) == 0 {
+		c.Flags.Usage()
+		return fmt.Errorf("no arguments provided")
+	}
+	sub, err := c.lookup(args[0])
+	if err != nil {
+		return err
+	}
+	return sub.Run(ctx, args[1:])
 }
 
 // Name is the command name. Command.Short is always expected to begin with
@@ -53,8 +61,8 @@ func (c *Command) Name() string {
 	return parts[0]
 }
 
-// Lookup returns the subcommand with the given name.
-func (c *Command) Lookup(name string) (*Command, error) {
+// lookup returns the subcommand with the given name.
+func (c *Command) lookup(name string) (*Command, error) {
 	for _, sub := range c.Commands {
 		if sub.Name() == name {
 			return sub, nil
